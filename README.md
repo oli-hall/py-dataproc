@@ -27,3 +27,9 @@ This has been tested with Python 2.7, but should be Python 3 compatible. More th
 ### Usage
 
 There are method level docs, and higher-level usage instructions will follow in a bit.
+
+N.B. You will need to auth your shell with Google Cloud before connecting. To do this (assuming you have `gcloud` CLI tools installed), run the following:
+
+```gcloud auth login```
+
+This will pop up an authentication dialogue in your browser of choice, and once you accept, it will authorise your shell with Google Cloud.
