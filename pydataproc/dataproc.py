@@ -3,6 +3,8 @@ import time
 import googleapiclient
 from googleapiclient import discovery
 
+from pydataproc.logger import log
+
 
 class DataProc(object):
     """
