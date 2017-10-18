@@ -11,10 +11,14 @@ Clone the repo, create a virtualenv, install the requirements, and you're good t
 ```bash
 virtualenv bin/env
 source bin/env/bin/activate
-pip install -r requirements.pip
+python setup.py install
 ```
 
-I'll look into packaging this up as an installable lib next, but for now, it's a bit manual.
+Setuptools should mean you can install directly from GitHub, by putting the following in your requirements file:
+
+```bash
+git+git://github.com/oli-hall/py-dataproc.git#egg=pydataproc
+```
 
 #### Requirements
 
