@@ -3,7 +3,7 @@ import time
 import googleapiclient
 from googleapiclient import discovery
 
-from omicron.logger import log
+from pydataproc.logger import log
 
 
 class DataProc(object):
