@@ -80,7 +80,7 @@ class DataProc(object):
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
                        master_type='n1-standard-1', worker_type='n1-standard-1',
-                       master_disk_gb=50, worker_disk_gb=50):
+                       master_disk_gb=50, worker_disk_gb=50, init_script=None):
         """Creates a DataProc cluster with the provided settings, returning a dict
         of the results returned from the API
 
@@ -91,6 +91,7 @@ class DataProc(object):
         :param worker_disk_gb: the size of the boot disk on each worker (default: 50GB)
         :param master_type: the type of instance to use for each master (default: n1-standard-1)
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
+        :param init_script: location of an initialisation script (default: None)
         """
         log.info('Creating cluster {}...'.format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
@@ -116,14 +117,17 @@ class DataProc(object):
                     'diskConfig': {
                         'bootDiskSizeGb': master_disk_gb
                     }
-                },
-                'initializationActions': [
-                    {
-                        'executableFile': 'gs://omicron-staging-test/cluster/dataproc-py3.sh'
-                    }
-                ]
+                }
             }
         }
+
+        if init_script:
+            cluster_data['config']['initializationActions'] = [
+                {
+                    'executableFile': init_script
+                }
+            ]
+
         log.debug('Cluster settings: {}'.format(cluster_data))
         result = self.dataproc.projects().regions().clusters().create(
             projectId=self.project,
