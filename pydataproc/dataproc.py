@@ -91,6 +91,7 @@ class DataProc(object):
         :param worker_disk_gb: the size of the boot disk on each worker (default: 50GB)
         :param master_type: the type of instance to use for each master (default: n1-standard-1)
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
+        :param init_script: location of an initialisation script (default: None)
         """
         log.info('Creating cluster {}...'.format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
