@@ -65,17 +65,23 @@ class DataProc(object):
 
         return None
 
-    def list_clusters(self):
+    def list_clusters(self, minimal=True):
         """
-        Queries the DataProc API, returning a list of all currently active clusters,
-        with all available details/configuration.
+        Queries the DataProc API, returning a dict of all currently active clusters,
+        keyed by cluster name.
 
+        If 'minimal' is specified, each cluster's current state will be returned,
+        otherwise the full cluster configuration will be returned.
+
+        :param minimal: reduces
         :return: list of dicts of cluster configuration
         """
         result = self.dataproc.projects().regions().clusters().list(
             projectId=self.project,
             region=self.region).execute()
-        return result
+        if minimal:
+            return {c['clusterName']: c['status']['state'] for c in result.get('clusters', [])}
+        return {c['clusterName']: c for c in result.get('clusters', [])}
 
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
