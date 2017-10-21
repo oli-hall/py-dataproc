@@ -43,10 +43,9 @@ class DataProc(object):
         :param cluster_name: The name of the cluster to check
         :return: cluster state string, or None if no such cluster
         """
-        clusters = self.list_clusters()
-        for c in clusters['clusters']:
-            if cluster_name == c['clusterName']:
-                return c['status']['state']
+        for c, st in self.list_clusters().items():
+            if c == cluster_name:
+                return st
 
         return None
 
@@ -58,10 +57,9 @@ class DataProc(object):
         :param cluster_name: The name of the cluster to check
         :return: dict of cluster information, or None if no such cluster
         """
-        clusters = self.list_clusters()
-        for c in clusters['clusters']:
-            if cluster_name == c['clusterName']:
-                return c
+        for c, ci in self.list_clusters(minimal=False).items():
+            if c == cluster_name:
+                return ci
 
         return None
 
@@ -73,10 +71,9 @@ class DataProc(object):
         :param cluster_name: The name of the cluster to check
         :return: staging bucket, or None if no such cluster
         """
-        clusters = self.list_clusters()
-        for c in clusters['clusters']:
-            if cluster_name == c['clusterName']:
-                return c['config']['configBucket']
+        for c, ci in self.list_clusters(minimal=False):
+            if c == cluster_name:
+                return ci['config']['configBucket']
 
         return None
 
