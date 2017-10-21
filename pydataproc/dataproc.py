@@ -50,6 +50,21 @@ class DataProc(object):
 
         return None
 
+    def cluster_info(self, cluster_name):
+        """
+        Returns the full cluster information associated with a given
+        cluster. If the cluster does not exist, returns None.
+
+        :param cluster_name: The name of the cluster to check
+        :return: dict of cluster information, or None if no such cluster
+        """
+        clusters = self.list_clusters()
+        for c in clusters['clusters']:
+            if cluster_name == c['clusterName']:
+                return c
+
+        return None
+
     def cluster_bucket(self, cluster_name):
         """
         Returns the staging GCS bucket associated with the provided
