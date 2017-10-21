@@ -98,7 +98,7 @@ class DataProc(object):
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
                        master_type='n1-standard-1', worker_type='n1-standard-1',
-                       master_disk_gb=50, worker_disk_gb=50, init_script=None):
+                       master_disk_gb=50, worker_disk_gb=50, init_script=None, block=True):
         """Creates a DataProc cluster with the provided settings, returning a dict
         of the results returned from the API
 
@@ -110,6 +110,7 @@ class DataProc(object):
         :param master_type: the type of instance to use for each master (default: n1-standard-1)
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
         :param init_script: location of an initialisation script (default: None)
+        :param block: whether to block upon cluster creation
         """
         log.info('Creating cluster {}...'.format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
@@ -152,6 +153,17 @@ class DataProc(object):
             region=self.region,
             body=cluster_data).execute()
         log.info('Cluster {} created'.format(cluster_name))
+
+        if not block:
+            return result
+
+
+        is_running = self.dataproc.is_running(cluster_name)
+        log.info("Waiting for cluster to be ready...")
+        while not is_running:
+            time.sleep(5)
+            is_running = self.dataproc.is_running(cluster_name)
+
         return result
 
     def delete_cluster(self, cluster_name):
