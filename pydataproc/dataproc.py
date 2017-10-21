@@ -164,7 +164,7 @@ class DataProc(object):
             time.sleep(5)
             is_running = self.dataproc.is_running(cluster_name)
 
-        return result
+        return self.cluster_info(cluster_name)
 
     def delete_cluster(self, cluster_name):
         """
