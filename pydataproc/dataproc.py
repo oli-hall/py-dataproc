@@ -180,6 +180,8 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
+    # TODO improve job submission - make it easier to specify jobs
+    # without needing to create a large job_details dict
     def submit_job(self, job_details):
         """
         Submit a job to a cluster.
