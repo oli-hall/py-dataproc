@@ -43,10 +43,23 @@ class DataProc(object):
         :param cluster_name: The name of the cluster to check
         :return: cluster state string, or None if no such cluster
         """
-        clusters = self.list_clusters()
-        for c in clusters['clusters']:
-            if cluster_name == c['clusterName']:
-                return c['status']['state']
+        for c, st in self.list_clusters().items():
+            if c == cluster_name:
+                return st
+
+        return None
+
+    def cluster_info(self, cluster_name):
+        """
+        Returns the full cluster information associated with a given
+        cluster. If the cluster does not exist, returns None.
+
+        :param cluster_name: The name of the cluster to check
+        :return: dict of cluster information, or None if no such cluster
+        """
+        for c, ci in self.list_clusters(minimal=False).items():
+            if c == cluster_name:
+                return ci
 
         return None
 
@@ -58,31 +71,40 @@ class DataProc(object):
         :param cluster_name: The name of the cluster to check
         :return: staging bucket, or None if no such cluster
         """
-        clusters = self.list_clusters()
-        for c in clusters['clusters']:
-            if cluster_name == c['clusterName']:
-                return c['config']['configBucket']
+        for c, ci in self.list_clusters(minimal=False):
+            if c == cluster_name:
+                return ci['config']['configBucket']
 
         return None
 
-    def list_clusters(self):
+    def list_clusters(self, minimal=True):
         """
-        Queries the DataProc API, returning a list of all currently active clusters,
-        with all available details/configuration.
+        Queries the DataProc API, returning a dict of all currently active clusters,
+        keyed by cluster name.
 
+        If 'minimal' is specified, each cluster's current state will be returned,
+        otherwise the full cluster configuration will be returned.
+
+        :param minimal: returns only the cluster state if set to True.
         :return: list of dicts of cluster configuration
         """
         result = self.dataproc.projects().regions().clusters().list(
             projectId=self.project,
             region=self.region).execute()
-        return result
+        if minimal:
+            return {c['clusterName']: c['status']['state'] for c in result.get('clusters', [])}
+        return {c['clusterName']: c for c in result.get('clusters', [])}
 
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
                        master_type='n1-standard-1', worker_type='n1-standard-1',
-                       master_disk_gb=50, worker_disk_gb=50, init_script=None):
+                       master_disk_gb=50, worker_disk_gb=50, init_script=None, block=True):
         """Creates a DataProc cluster with the provided settings, returning a dict
-        of the results returned from the API
+        of the results returned from the API. It can wait for cluster creation if desired.
+
+        N.B. the cluster creation currently waits for the cluster to reach a 'RUNNING' state.
+        If there is an initialisation error, it may never reach this state, which currently
+        isn't handled.
 
         :param cluster_name: the name of the cluster
         :param num_masters: the number of master instances to use (default: 1)
@@ -92,6 +114,7 @@ class DataProc(object):
         :param master_type: the type of instance to use for each master (default: n1-standard-1)
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
         :param init_script: location of an initialisation script (default: None)
+        :param block: whether to block upon cluster creation.
         """
         log.info('Creating cluster {}...'.format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
@@ -134,7 +157,19 @@ class DataProc(object):
             region=self.region,
             body=cluster_data).execute()
         log.info('Cluster {} created'.format(cluster_name))
-        return result
+
+        if not block:
+            return result
+
+
+        is_running = self.dataproc.is_running(cluster_name)
+        log.info("Waiting for cluster to be ready...")
+        log.warn("N.B. This may get stuck if the cluster never reaches a RUNNING state")
+        while not is_running:
+            time.sleep(5)
+            is_running = self.dataproc.is_running(cluster_name)
+
+        return self.cluster_info(cluster_name)
 
     def delete_cluster(self, cluster_name):
         """
@@ -150,6 +185,8 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
+    # TODO improve job submission - make it easier to specify jobs
+    # without needing to create a large job_details dict
     def submit_job(self, job_details):
         """
         Submit a job to a cluster.

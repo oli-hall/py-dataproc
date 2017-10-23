@@ -9,7 +9,7 @@ test_requires = [
 
 setup(
     name='Py-DataProc',
-    version='0.1.0',
+    version='0.2.0',
     author='Oli Hall',
     author_email='',
     description="Python wrapper for the Google DataProc client",
