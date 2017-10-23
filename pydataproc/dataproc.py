@@ -85,7 +85,7 @@ class DataProc(object):
         If 'minimal' is specified, each cluster's current state will be returned,
         otherwise the full cluster configuration will be returned.
 
-        :param minimal: reduces
+        :param minimal: returns only the cluster state if set to True.
         :return: list of dicts of cluster configuration
         """
         result = self.dataproc.projects().regions().clusters().list(
@@ -100,7 +100,11 @@ class DataProc(object):
                        master_type='n1-standard-1', worker_type='n1-standard-1',
                        master_disk_gb=50, worker_disk_gb=50, init_script=None, block=True):
         """Creates a DataProc cluster with the provided settings, returning a dict
-        of the results returned from the API
+        of the results returned from the API. It can wait for cluster creation if desired.
+
+        N.B. the cluster creation currently waits for the cluster to reach a 'RUNNING' state.
+        If there is an initialisation error, it may never reach this state, which currently
+        isn't handled.
 
         :param cluster_name: the name of the cluster
         :param num_masters: the number of master instances to use (default: 1)
@@ -110,7 +114,7 @@ class DataProc(object):
         :param master_type: the type of instance to use for each master (default: n1-standard-1)
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
         :param init_script: location of an initialisation script (default: None)
-        :param block: whether to block upon cluster creation
+        :param block: whether to block upon cluster creation.
         """
         log.info('Creating cluster {}...'.format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
@@ -160,6 +164,7 @@ class DataProc(object):
 
         is_running = self.dataproc.is_running(cluster_name)
         log.info("Waiting for cluster to be ready...")
+        log.warn("N.B. This may get stuck if the cluster never reaches a RUNNING state")
         while not is_running:
             time.sleep(5)
             is_running = self.dataproc.is_running(cluster_name)
