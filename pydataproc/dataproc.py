@@ -185,7 +185,7 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
-    def submit_job(self, cluster_name, file_to_run, python_files=None, args=[]):
+    def submit_job(self, cluster_name, file_to_run, python_files=None, args=[], job_details=None):
         """
         Submit a PySpark job to a cluster. Allows optional specification of
         additional python files, and any job arguments required.
@@ -203,9 +203,20 @@ class DataProc(object):
             "value_for_flag2
         ]
         Defaults to []
+        :param job_details: the full job_details dict. If specified, overrides the other arguments,
+        and is passed directly to the job submission call.
         :return: the results of the job submission call
         """
 
+        job_details = job_details or self._build_job_details(cluster_name, file_to_run, python_files, args)
+
+        result = self.dataproc.projects().regions().jobs().submit(
+            projectId=self.project,
+            region=self.region,
+            body=job_details).execute()
+        return result
+
+    def _build_job_details(self, cluster_name, file_to_run, python_files, args):
         if python_files:
             assert isinstance(python_files, list)
 
@@ -225,11 +236,7 @@ class DataProc(object):
         if python_files:
             job_details["job"]["pysparkJob"]["pythonFileUris"] = python_files
 
-        result = self.dataproc.projects().regions().jobs().submit(
-            projectId=self.project,
-            region=self.region,
-            body=job_details).execute()
-        return result
+        return job_details
 
     def wait_for_job(self, job_id):
         """
