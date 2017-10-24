@@ -185,7 +185,7 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
-    def submit_job(self, cluster_name, file_to_run, python_files=None, args=[], job_details=None):
+    def submit_job(self, cluster_name, file_to_run, python_files=None, args="", job_details=None):
         """
         Submit a PySpark job to a cluster. Allows optional specification of
         additional python files, and any job arguments required.
@@ -194,20 +194,12 @@ class DataProc(object):
         :param file_to_run: The PySpark file to run. Must be a Google Storage path.
         :param python_files: Specify additional files or a zip location containing additional
         python files to pass to the job. Must be Google Storage paths. Defaults to None.
-        :param args: List of job arguments. Specified as a list. If job takes named args, specify
-        flag and argument as separate items in the list, e.g.
-        [
-            "-flag1",
-            "value_for_flag1",
-            "-flag2",
-            "value_for_flag2
-        ]
-        Defaults to []
+        :param args: job arguments, as a string. Specify args as you would on the command line, e.g.
+        "-flag1 value_for_flag1 -flag2 value_for_flag2 unflagged_arg"
         :param job_details: the full job_details dict. If specified, overrides the other arguments,
         and is passed directly to the job submission call.
         :return: the results of the job submission call
         """
-
         job_details = job_details or self._build_job_details(cluster_name, file_to_run, python_files, args)
 
         result = self.dataproc.projects().regions().jobs().submit(
@@ -216,7 +208,7 @@ class DataProc(object):
             body=job_details).execute()
         return result
 
-    def _build_job_details(self, cluster_name, file_to_run, python_files, args):
+    def _build_job_details(self, cluster_name, file_to_run, python_files=None, args=""):
         if python_files:
             assert isinstance(python_files, list)
 
@@ -228,7 +220,7 @@ class DataProc(object):
                 },
                 "pysparkJob": {
                     "mainPythonFileUri": file_to_run,
-                    "args": args
+                    "args": args.split()
                 },
             }
         }
