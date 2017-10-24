@@ -185,7 +185,7 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
-    def submit_job(self, cluster_name, file_to_run, python_files=None, args="", job_details=None):
+    def submit_job(self, cluster_name=None, file_to_run=None, python_files=None, args="", job_details=None):
         """
         Submit a PySpark job to a cluster. Allows optional specification of
         additional python files, and any job arguments required.
@@ -211,6 +211,9 @@ class DataProc(object):
     def _build_job_details(self, cluster_name, file_to_run, python_files=None, args=""):
         if python_files:
             assert isinstance(python_files, list)
+
+        assert cluster_name
+        assert file_to_run
 
         job_details = {
             "projectId": self.project,
