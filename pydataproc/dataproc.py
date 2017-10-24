@@ -185,15 +185,46 @@ class DataProc(object):
             clusterName=cluster_name).execute()
         return result
 
-    # TODO improve job submission - make it easier to specify jobs
-    # without needing to create a large job_details dict
-    def submit_job(self, job_details):
+    def submit_job(self, cluster_name, file_to_run, python_files=None, args=[]):
         """
-        Submit a job to a cluster.
+        Submit a PySpark job to a cluster. Allows optional specification of
+        additional python files, and any job arguments required.
 
-        :param job_details: A dict describing the job to be submitted
+        :param cluster_name: The name of the cluster to submit the job to
+        :param file_to_run: The PySpark file to run. Must be a Google Storage path.
+        :param python_files: Specify additional files or a zip location containing additional
+        python files to pass to the job. Must be Google Storage paths. Defaults to None.
+        :param args: List of job arguments. Specified as a list. If job takes named args, specify
+        flag and argument as separate items in the list, e.g.
+        [
+            "-flag1",
+            "value_for_flag1",
+            "-flag2",
+            "value_for_flag2
+        ]
+        Defaults to []
         :return: the results of the job submission call
         """
+
+        if python_files:
+            assert isinstance(python_files, list)
+
+        job_details = {
+            "projectId": self.project,
+            "job": {
+                "placement": {
+                    "clusterName": cluster_name
+                },
+                "pysparkJob": {
+                    "mainPythonFileUri": file_to_run,
+                    "args": args
+                },
+            }
+        }
+
+        if python_files:
+            job_details["job"]["pysparkJob"]["pythonFileUris"] = python_files
+
         result = self.dataproc.projects().regions().jobs().submit(
             projectId=self.project,
             region=self.region,
