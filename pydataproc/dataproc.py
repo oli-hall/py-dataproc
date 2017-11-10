@@ -86,7 +86,7 @@ class DataProc(object):
         otherwise the full cluster configuration will be returned.
 
         :param minimal: returns only the cluster state if set to True.
-        :return: list of dicts of cluster configuration
+        :return: dict of cluster name -> cluster information
         """
         result = self.dataproc.projects().regions().clusters().list(
             projectId=self.project,
