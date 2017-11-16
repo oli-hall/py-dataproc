@@ -162,12 +162,12 @@ class DataProc(object):
             return result
 
 
-        is_running = self.dataproc.is_running(cluster_name)
+        is_running = self.is_running(cluster_name)
         log.info("Waiting for cluster to be ready...")
         log.warn("N.B. This may get stuck if the cluster never reaches a RUNNING state")
         while not is_running:
             time.sleep(5)
-            is_running = self.dataproc.is_running(cluster_name)
+            is_running = self.is_running(cluster_name)
 
         return self.cluster_info(cluster_name)
 
