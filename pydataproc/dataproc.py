@@ -181,6 +181,7 @@ class DataProc(object):
         :param cluster_name: the name of the cluster to delete
         :return: the (dict) results of the deletion
         """
+        # TODO this doesn't deal with clusters that aren't running (e.g. that failed on startup)
         log.info('Tearing down cluster {}...'.format(cluster_name))
         result = self.dataproc.projects().regions().clusters().delete(
             projectId=self.project,
