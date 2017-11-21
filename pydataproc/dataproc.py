@@ -169,7 +169,7 @@ class DataProc(object):
 
         if state == 'ERROR':
             cluster_info = self.cluster_info(cluster_name)
-            status_detail = cluster_info['status']['detail']
+            status_detail = cluster_info['status'].get('detail', '')
             raise Exception("Cluster encountered an error: {}".format(status_detail))
 
         return self.cluster_info(cluster_name)
