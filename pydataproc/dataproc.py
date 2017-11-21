@@ -21,7 +21,7 @@ class DataProc(object):
 
     def get_client(self):
         """Builds a client to the dataproc API."""
-        dataproc = googleapiclient.discovery.build('dataproc', 'v1')
+        dataproc = googleapiclient.discovery.build('dataproc', 'v1', cache_discovery=False)
         return dataproc
 
     def is_running(self, cluster_name):
