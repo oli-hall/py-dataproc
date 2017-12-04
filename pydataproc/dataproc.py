@@ -174,6 +174,41 @@ class DataProc(object):
 
         return self.cluster_info(cluster_name)
 
+    # TODO allow changing of secondary worker count
+    def change_worker_count(self, cluster_name, worker_count):
+        """
+        Update worker count for a given cluster
+
+        :param cluster_name: str, name of cluster to update
+        :param worker_count: int, new worker count
+        :return:
+        """
+        assert cluster_name
+        assert worker_count
+
+        if not self.is_running(cluster_name):
+            raise Exception("No cluster found with name {}".format(cluster_name))
+
+        patch_config = {
+            "config": {
+                "workerConfig": {
+                    "numInstances": worker_count
+                }
+            }
+        }
+
+        result = self.dataproc.projects().regions().clusters().patch(
+            projectId=self.project,
+            region=self.region,
+            clusterName=cluster_name,
+            updateMask='config.worker_config.num_instances',
+            body=patch_config).execute()
+
+        # TODO optionally wait for result
+        if result['metadata']['@type'] != 'type.googleapis.com/google.cloud.dataproc.v1.ClusterOperationMetadata':
+            raise Exception('Failed to update worker count on cluster {}'.format(cluster_name))
+        return result
+
     def delete_cluster(self, cluster_name):
         """
         Deletes the cluster with the provided name, if it exists.
