@@ -95,6 +95,40 @@ class DataProc(object):
             return {c['clusterName']: c['status']['state'] for c in result.get('clusters', [])}
         return {c['clusterName']: c for c in result.get('clusters', [])}
 
+    # TODO filter by cluster name?
+    def list_jobs(self, minimal=True, running=True, count=20):
+        """
+        Queries the DataProc API, returning a dict of jobs, keyed by job ID.
+
+        If 'minimal' is specified, each job's current state will be returned,
+        otherwise the full job configuration will be returned.
+
+        :param minimal: returns only the job state if set to True.
+        :param running: returns only ACTIVE jobs if set to True.
+        :param count: maximum number of jobs to return.
+        :return: dict of job ID -> job information
+        """
+        # TODO pagination
+        if running:
+            result = self.dataproc.projects().regions().jobs().list(
+                projectId=self.project,
+                region=self.region,
+                filter='status.state = ACTIVE'
+            ).execute()
+        else:
+            result = self.dataproc.projects().regions().jobs().list(
+                projectId=self.project,
+                region=self.region
+            ).execute()
+        if minimal:
+            return {j['reference']['jobId']: j['status']['state'] for j in result.get('jobs', [])}
+        return {j['reference']['jobId']: j for j in result.get('jobs', [])}
+
+    # TODO info for specific job
+
+    # TODO logs for specific job (optionally streaming logs)
+    
+
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
                        master_type='n1-standard-1', worker_type='n1-standard-1',
