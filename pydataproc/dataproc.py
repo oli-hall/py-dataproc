@@ -138,6 +138,9 @@ class DataProc(object):
                 raise Exception("'{}' is not a valid cluster".format(cluster_name))
             raise e
 
+        if 'jobs' not in result:
+            return {}
+
         # TODO investigate using generators here
         page_token = result['nextPageToken']
         while len(result['jobs']) < count:
