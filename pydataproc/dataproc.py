@@ -96,7 +96,7 @@ class DataProc(object):
         return {c['clusterName']: c for c in result.get('clusters', [])}
 
     # TODO filter by cluster name?
-    def list_jobs(self, minimal=True, running=True, count=20):
+    def list_jobs(self, minimal=True, running=True, count=10):
         """
         Queries the DataProc API, returning a dict of jobs, keyed by job ID.
 
@@ -108,18 +108,32 @@ class DataProc(object):
         :param count: maximum number of jobs to return.
         :return: dict of job ID -> job information
         """
-        # TODO pagination
+        filter=None
         if running:
-            result = self.dataproc.projects().regions().jobs().list(
+            filter='status.state = ACTIVE'
+
+        result = self.dataproc.projects().regions().jobs().list(
+            projectId=self.project,
+            region=self.region,
+            filter=filter
+        ).execute()
+        # TODO investigate using generators here
+        pageToken = result['nextPageToken']
+        while len(result['jobs']) < count:
+            moar = self.dataproc.projects().regions().jobs().list(
                 projectId=self.project,
                 region=self.region,
-                filter='status.state = ACTIVE'
+                filter=filter,
+                pageToken=pageToken
             ).execute()
-        else:
-            result = self.dataproc.projects().regions().jobs().list(
-                projectId=self.project,
-                region=self.region
-            ).execute()
+            # TODO are there other outcomes?
+            if len(moar['jobs']) == 0:
+                break
+            result['jobs'].extend(moar['jobs'])
+            pageToken = moar['nextPageToken']
+
+        result['jobs'] = result['jobs'][:count]
+
         if minimal:
             return {j['reference']['jobId']: j['status']['state'] for j in result.get('jobs', [])}
         return {j['reference']['jobId']: j for j in result.get('jobs', [])}
@@ -127,7 +141,7 @@ class DataProc(object):
     # TODO info for specific job
 
     # TODO logs for specific job (optionally streaming logs)
-    
+
 
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
