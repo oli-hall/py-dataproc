@@ -200,14 +200,7 @@ class DataProc(object):
         # This isn't yet supported by the DataProc API/Python lib, so must be done
         # using subprocess and the gcloud CLI tools
         subprocess.call(
-            [
-                "gcloud",
-                "dataproc",
-                "jobs", "wait",
-                "--region",
-                self.region,
-                job_id
-            ],
+            "gcloud dataproc jobs wait --region {} {}".format(self.region, job_id).split(),
             stdout=subprocess.PIPE
         )
         print('\n--------------------------\n')
