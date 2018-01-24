@@ -164,7 +164,26 @@ class DataProc(object):
             return {j['reference']['jobId']: j['status']['state'] for j in result.get('jobs', [])}
         return {j['reference']['jobId']: j for j in result.get('jobs', [])}
 
-    # TODO info for specific job
+    def job_info(self, job_id):
+        """
+        Returns the full configuration information associated with a given
+        job. If the job does not exist, returns None.
+
+        :param job_id: The ID of the job to check
+        :return: dict of job information, or None if no such cluster
+        """
+        assert job_id
+
+        try:
+            return self.dataproc.projects().regions().jobs().get(
+                projectId=self.project,
+                region=self.region,
+                jobId=job_id
+            ).execute()
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                return None
+            raise e
 
     # TODO logs for specific job (optionally streaming logs)
 
