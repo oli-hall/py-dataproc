@@ -1,7 +1,9 @@
+import subprocess
 import time
 
 import googleapiclient
 from googleapiclient import discovery
+from googleapiclient.errors import HttpError
 
 from pydataproc.logger import log
 
@@ -12,6 +14,8 @@ class DataProc(object):
     single point to check cluster status, submit jobs, create/tear down
     clusters, etc.
     """
+
+    MAX_JOBS = 500
 
     def __init__(self, project, region='europe-west1', zone='europe-west1-b'):
         self.dataproc = self.get_client()
@@ -94,6 +98,112 @@ class DataProc(object):
         if minimal:
             return {c['clusterName']: c['status']['state'] for c in result.get('clusters', [])}
         return {c['clusterName']: c for c in result.get('clusters', [])}
+
+    def list_jobs(self, minimal=True, running=True, count=10, cluster_name=None):
+        """
+        Queries the DataProc API, returning a dict of jobs, keyed by job ID.
+
+        If 'minimal' is specified, each job's current state will be returned,
+        otherwise the full job configuration will be returned.
+
+        If cluster_name is specified and not None, the list of jobs will be filtered
+        to only those that ran on this cluster.
+
+        :param minimal: returns only the job state if set to True.
+        :param running: returns only ACTIVE jobs if set to True.
+        :param count: maximum number of jobs to return.
+        :param cluster_name: filter by cluster name. Defaults to None.
+        :return: dict of job ID -> job information
+        """
+        filter = None
+        if running:
+            filter = 'status.state = ACTIVE'
+
+        cluster_name_filter = None
+        if cluster_name:
+            cluster_name_filter = cluster_name
+
+        if count > self.MAX_JOBS:
+            log.info('count of {} too high, limiting to {} jobs...'.format(count, self.MAX_JOBS))
+            count = self.MAX_JOBS
+
+        try:
+            result = self.dataproc.projects().regions().jobs().list(
+                projectId=self.project,
+                region=self.region,
+                filter=filter,
+                clusterName=cluster_name_filter
+            ).execute()
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                raise Exception("'{}' is not a valid cluster".format(cluster_name))
+            raise e
+
+        if 'jobs' not in result:
+            return {}
+
+        # TODO investigate using generators here
+        page_token = result['nextPageToken']
+        while len(result['jobs']) < count:
+            moar = self.dataproc.projects().regions().jobs().list(
+                projectId=self.project,
+                region=self.region,
+                filter=filter,
+                clusterName=cluster_name_filter,
+                pageToken=page_token
+            ).execute()
+            if len(moar['jobs']) == 0:
+                break
+            result['jobs'].extend(moar['jobs'])
+            if 'nextPageToken' not in page_token:
+                break
+            page_token = moar['nextPageToken']
+
+        result['jobs'] = result['jobs'][:count]
+
+        if minimal:
+            return {j['reference']['jobId']: j['status']['state'] for j in result.get('jobs', [])}
+        return {j['reference']['jobId']: j for j in result.get('jobs', [])}
+
+    def job_info(self, job_id):
+        """
+        Returns the full configuration information associated with a given
+        job. If the job does not exist, returns None.
+
+        :param job_id: The ID of the job to check
+        :return: dict of job information, or None if no such cluster
+        """
+        assert job_id
+
+        try:
+            return self.dataproc.projects().regions().jobs().get(
+                projectId=self.project,
+                region=self.region,
+                jobId=job_id
+            ).execute()
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                return None
+            raise e
+
+    def stream_job_logs(self, job_id):
+        """
+        Streams the job logs to stdout, using the 'gcloud dataproc jobs wait'
+        command and subprocess.
+
+        :param job_id: string, ID of job to stream logs for
+        :return: None
+        """
+        print('\nJOB LOGS (job ID: {}):\n--------------------------\n'.format(job_id))
+        # piping stdout to PIPE ensures that the job configuration isn't output
+        # when the job completes
+        # This isn't yet supported by the DataProc API/Python lib, so must be done
+        # using subprocess and the gcloud CLI tools
+        subprocess.call(
+            "gcloud dataproc jobs wait --region {} {}".format(self.region, job_id).split(),
+            stdout=subprocess.PIPE
+        )
+        print('\n--------------------------\n')
 
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
