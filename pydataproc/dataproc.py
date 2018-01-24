@@ -1,3 +1,4 @@
+import subprocess
 import time
 
 import googleapiclient
@@ -185,8 +186,31 @@ class DataProc(object):
                 return None
             raise e
 
-    # TODO logs for specific job (optionally streaming logs)
+    def stream_job_logs(self, job_id):
+        """
+        Streams the job logs to stdout, using the 'gcloud dataproc jobs wait'
+        command and subprocess.
 
+        :param job_id: string, ID of job to stream logs for
+        :return: None
+        """
+        print('\nJOB LOGS (job ID: {}):\n--------------------------\n'.format(job_id))
+        # piping stdout to PIPE ensures that the job configuration isn't output
+        # when the job completes
+        # This isn't yet supported by the DataProc API/Python lib, so must be done
+        # using subprocess and the gcloud CLI tools
+        subprocess.call(
+            [
+                "gcloud",
+                "dataproc",
+                "jobs", "wait",
+                "--region",
+                self.region,
+                job_id
+            ],
+            stdout=subprocess.PIPE
+        )
+        print('\n--------------------------\n')
 
     # TODO add support for preemptible workers
     def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
