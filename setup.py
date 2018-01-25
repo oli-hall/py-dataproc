@@ -8,7 +8,7 @@ test_requires = [
 ]
 
 setup(
-    name='Py-DataProc',
+    name='pydataproc',
     version='0.6.1',
     author='Oli Hall',
     author_email='',
