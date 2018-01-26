@@ -10,9 +10,10 @@ class Cluster(object):
     a DataProc cluster.
 
     Currently, this will raise an Exception if the cluster does not exist
-    both at creation, and during any method call.
+    during any method call.
     """
 
+    # TODO handle cluster deletion more gracefully
     def __init__(self, dataproc, cluster_name):
 
         assert dataproc
@@ -21,8 +22,23 @@ class Cluster(object):
         self.dataproc = dataproc
         self.cluster_name = cluster_name
 
-        # check that cluster exists
-        self.info()
+    def exists(self):
+        """
+        Checks if the cluster exists.
+
+        :return: boolean, True if cluster exists, False otherwise.
+        """
+        try:
+            self.dataproc.client.projects().regions().clusters().get(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                clusterName=self.cluster_name
+            ).execute()
+            return True
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                return False
+            raise e
 
     def is_running(self):
         """
@@ -31,11 +47,11 @@ class Cluster(object):
 
         :return: True if the cluster is RUNNING, False otherwise
         """
-        state = self.state()
+        state = self.status()
         return state and state == 'RUNNING'
 
 
-    def state(self):
+    def status(self):
         """
         Returns the current state of the cluster.
 

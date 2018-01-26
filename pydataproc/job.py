@@ -43,10 +43,8 @@ class Job(object):
 
         :return: dict of job information, or None if no such cluster
         """
-        assert job_id
-
         try:
-            return self.dataproc.projects().regions().jobs().get(
+            return self.dataproc.client.projects().regions().jobs().get(
                 projectId=self.dataproc.project,
                 region=self.dataproc.region,
                 jobId=self.job_id
@@ -78,4 +76,22 @@ class Job(object):
             log.debug("Job state: {}".format(result['status']['state']))
             time.sleep(5)
 
-    # TODO delete/cancel/status
+    def exists(self):
+        """
+        Checks if the job exists.
+
+        :return: boolean, True if job exists, False otherwise.
+        """
+        try:
+            self.dataproc.client.projects().regions().jobs().get(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                jobId=self.job_id
+            ).execute()
+            return True
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                return False
+            raise e
+
+    # TODO delete/cancel/status/is_running/succeeded

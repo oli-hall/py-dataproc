@@ -1,5 +1,7 @@
 import time
 
+from googleapiclient.errors import HttpError
+
 from cluster import Cluster
 from logger import log
 
@@ -50,8 +52,10 @@ class Clusters(object):
         :param worker_type: the type of instance to use for each worker (default: n1-standard-1)
         :param init_scripts: location initialisation scripts (default: [])
         :param block: whether to block upon cluster creation.
+
+        :return: Cluster object
         """
-        log.info('Creating cluster {}...'.format(cluster_name))
+        log.info("Creating cluster '{}'".format(cluster_name))
         zone_uri = 'https://www.googleapis.com/compute/v1/projects/{}/zones/{}'.format(
                 self.dataproc.project, self.dataproc.zone)
 
@@ -85,11 +89,18 @@ class Clusters(object):
             ]
 
         log.debug('Cluster settings: {}'.format(cluster_data))
-        # TODO is this needed for anything? maybe log at debug?
-        result = self.dataproc.client.projects().regions().clusters().create(
-            projectId=self.dataproc.project,
-            region=self.dataproc.region,
-            body=cluster_data).execute()
+
+        try:
+            result = self.dataproc.client.projects().regions().clusters().create(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                body=cluster_data
+            ).execute()
+        except HttpError as e:
+            if e.resp['status'] == '409':
+                # TODO handle this. might be running, or shutting down, or spinning up, or errored.
+                return None
+            raise e
 
         log.debug("Create call for cluster '{}' returned: {}".format(cluster_name, result))
 
@@ -99,15 +110,16 @@ class Clusters(object):
             return cluster
 
 
-        state = cluster.state()
+        status = cluster.status()
         log.info("Waiting for cluster to be ready...")
-        while not state in ['RUNNING', 'ERROR']:
+        while not status in ['RUNNING', 'ERROR']:
             time.sleep(5)
-            state = cluster.state()
+            status = cluster.status()
 
-        if state == 'ERROR':
+        if status == 'ERROR':
             cluster_info = cluster.info()
             status_detail = cluster_info['status'].get('detail', '')
             raise Exception("Cluster encountered an error: {}".format(status_detail))
 
-        return cluster.info()
+        log.info("Cluster '{}' is ready.".format(cluster_name))
+        return cluster

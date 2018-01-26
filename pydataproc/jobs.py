@@ -42,7 +42,7 @@ class Jobs(object):
             count = self.MAX_JOBS
 
         try:
-            result = self.dataproc.projects().regions().jobs().list(
+            result = self.dataproc.client.projects().regions().jobs().list(
                 projectId=self.dataproc.project,
                 region=self.dataproc.region,
                 filter=filter,

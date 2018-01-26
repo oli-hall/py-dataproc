@@ -23,14 +23,20 @@ class DataProc(object):
         """Builds a client to the DataProc API."""
         return googleapiclient.discovery.build('dataproc', 'v1', cache_discovery=False)
 
-    def clusters(self):
+    def clusters(self, cluster_name=None):
+        if cluster_name:
+            cluster = Cluster(self, cluster_name)
+            if not cluster.exists():
+                raise Exception("Cluster '{}' does not exist".format(cluster_name))
+            return cluster
+
         return Clusters(self)
 
-    def cluster(self, cluster_name):
-        return Cluster(self, cluster_name)
+    def jobs(self, job_id=None):
+        if job_id:
+            job = Job(self, job_id)
+            if not job.exists():
+                raise Exception("Job '{}' does not exist".format(job_id))
+            return job
 
-    def jobs(self):
         return Jobs(self)
-
-    def job(self, job_id):
-        return Job(self, job_id)
