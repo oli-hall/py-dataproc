@@ -12,7 +12,7 @@ class Clusters(object):
 
         self.dataproc = dataproc
 
-    def list_clusters(self, minimal=True):
+    def list(self, minimal=True):
         """
         Queries the DataProc API, returning a dict of all currently active clusters,
         keyed by cluster name.
@@ -32,9 +32,9 @@ class Clusters(object):
 
 
     # TODO add support for preemptible workers
-    def create_cluster(self, cluster_name, num_masters=1, num_workers=2,
-                       master_type='n1-standard-1', worker_type='n1-standard-1',
-                       master_disk_gb=50, worker_disk_gb=50, init_scripts=[], block=True):
+    def create(self, cluster_name, num_masters=1, num_workers=2,
+               master_type='n1-standard-1', worker_type='n1-standard-1',
+               master_disk_gb=50, worker_disk_gb=50, init_scripts=[], block=True):
         """Creates a DataProc cluster with the provided settings, returning a dict
         of the results returned from the API. It can wait for cluster creation if desired.
 
