@@ -41,42 +41,44 @@ class Job(object):
         By default streams job logs to stdout, using the 'gcloud client jobs wait'
         command and subprocess.
 
-        :return: the results of the job, once complete
+        :return: string, status of the job once complete
         """
         log.info("Waiting for job {} to finish...".format(self.job_id))
-        if stream_logs:
-            self._stream_logs()
+        self._stream_logs(stream_logs)
 
-            return self.info()
-        else:
-            while True:
-                result = self.info()
-                if result['status']['state'] == 'ERROR':
-                    log.info('Error running job: {}'.format(result['status']['details']))
-                    return result
-                elif result['status']['state'] == 'DONE':
-                    log.info('Job finished.')
-                    return result
-                log.debug("Job state: {}".format(result['status']['state']))
-                time.sleep(5)
+        status = self.status()
+        if status == 'ERROR':
+            log.info('Error running job: {}'.format(self.info()['status']['details']))
+        elif status == 'DONE':
+            log.info('Job finished.')
+        log.debug("Job status: {}".format(status))
+        return status
 
-    def _stream_logs(self):
+    def _stream_logs(self, stream_logs=False):
         """
         Streams the job logs to stdout, using the 'gcloud client jobs wait'
         command and subprocess.
 
         :return: None
         """
-        print('\nJOB LOGS (job ID: {}):\n--------------------------\n'.format(self.job_id))
         # piping stdout to PIPE ensures that the job configuration isn't output
         # when the job completes
         # This isn't yet supported by the DataProc API/Python lib, so must be done
         # using subprocess and the gcloud CLI tools
-        subprocess.call(
-            "gcloud client jobs wait --region {} {}".format(self.dataproc.region, self.job_id).split(),
-            stdout=subprocess.PIPE
-        )
-        print('\n--------------------------\n')
+        if stream_logs:
+            print('\nJOB LOGS (job ID: {}):\n--------------------------\n'.format(self.job_id))
+            subprocess.call(
+                "gcloud dataproc jobs wait --region {} {}".format(self.dataproc.region, self.job_id).split(),
+                stdout=subprocess.PIPE
+            )
+            print('\n--------------------------\n')
+        else:
+            # piping stderr to PIPE suppresses all output
+            subprocess.call(
+                "gcloud dataproc jobs wait --region {} {}".format(self.dataproc.region, self.job_id).split(),
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE
+            )
 
     def exists(self):
         """
