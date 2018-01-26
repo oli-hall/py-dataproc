@@ -78,4 +78,4 @@ class Job(object):
             log.debug("Job state: {}".format(result['status']['state']))
             time.sleep(5)
 
-    # TODO delete/cancel
+    # TODO delete/cancel/status
