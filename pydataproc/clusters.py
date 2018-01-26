@@ -4,7 +4,7 @@ from googleapiclient.errors import HttpError
 
 from cluster import Cluster
 from logger import log
-
+from errors import ClusterAlreadyExistsException
 
 class Clusters(object):
 
@@ -98,8 +98,7 @@ class Clusters(object):
             ).execute()
         except HttpError as e:
             if e.resp['status'] == '409':
-                # TODO handle this. might be running, or shutting down, or spinning up, or errored.
-                return None
+                raise ClusterAlreadyExistsException("Cluster '{}' already exists".format(cluster_name))
             raise e
 
         log.debug("Create call for cluster '{}' returned: {}".format(cluster_name, result))

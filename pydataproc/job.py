@@ -1,14 +1,13 @@
 import subprocess
-import time
 
 from googleapiclient.errors import HttpError
 
 from logger import log
+from errors import NoSuchJobException
 
 
 class Job(object):
 
-    # TODO naming of dataproc
     def __init__(self, dataproc, job_id):
 
         assert dataproc
@@ -32,7 +31,7 @@ class Job(object):
             ).execute()
         except HttpError as e:
             if e.resp['status'] == '404':
-                return None
+                raise NoSuchJobException("No job found with ID {}".format(self.job_id))
             raise e
 
     def wait(self, stream_logs=True):
