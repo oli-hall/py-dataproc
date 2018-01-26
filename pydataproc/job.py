@@ -94,4 +94,13 @@ class Job(object):
                 return False
             raise e
 
-    # TODO delete/cancel/status/is_running/succeeded
+    def status(self):
+        """
+        Fetch status of job
+
+        :return: string, job status
+        """
+        info = self.info()
+        return info['status']['state']
+
+    # TODO delete/cancel/is_running/succeeded
