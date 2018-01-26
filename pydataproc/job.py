@@ -103,7 +103,6 @@ class Job(object):
 
         :return: string, job status
         """
-        info = self.info()
-        return info['status']['state']
+        return self.info()['status']['state']
 
     # TODO delete/cancel/is_running/succeeded
