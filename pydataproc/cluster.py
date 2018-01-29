@@ -2,7 +2,7 @@ from googleapiclient.errors import HttpError
 
 from job import Job
 from logger import log
-from errors import NoSuchClusterException
+from errors import NoSuchClusterException, ClusterHasGoneAwayException
 
 
 class Cluster(object):
@@ -78,7 +78,7 @@ class Cluster(object):
             ).execute()
         except HttpError as e:
             if e.resp['status'] == '404':
-                raise Exception("'{}' is not a valid cluster".format(self.cluster_name))
+                raise ClusterHasGoneAwayException("'{}' no longer exists".format(self.cluster_name))
             raise e
 
 
@@ -108,13 +108,17 @@ class Cluster(object):
                 }
             }
         }
-
-        result = self.dataproc.client.projects().regions().clusters().patch(
-            projectId=self.dataproc.project,
-            region=self.dataproc.region,
-            clusterName=self.cluster_name,
-            updateMask='config.worker_config.num_instances',
-            body=patch_config).execute()
+        try:
+            result = self.dataproc.client.projects().regions().clusters().patch(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                clusterName=self.cluster_name,
+                updateMask='config.worker_config.num_instances',
+                body=patch_config).execute()
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                raise ClusterHasGoneAwayException("'{}' no longer exists".format(self.cluster_name))
+            raise e
 
         # TODO optionally wait for result
         if result['metadata']['@type'] != 'type.googleapis.com/google.cloud.client.v1.ClusterOperationMetadata':
@@ -129,11 +133,15 @@ class Cluster(object):
         """
         # TODO this doesn't deal with clusters that aren't running (e.g. that failed on startup)
         log.info('Tearing down cluster {}...'.format(self.cluster_name))
-        result = self.dataproc.client.projects().regions().clusters().delete(
-            projectId=self.dataproc.project,
-            region=self.dataproc.region,
-            clusterName=self.cluster_name).execute()
-        return result
+        try:
+            return self.dataproc.client.projects().regions().clusters().delete(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                clusterName=self.cluster_name).execute()
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                raise ClusterHasGoneAwayException("'{}' no longer exists".format(self.cluster_name))
+            raise e
 
     def submit_job(self, file_to_run=None, python_files=None, args="", job_details=None):
         """
@@ -151,13 +159,18 @@ class Cluster(object):
         """
         job_details = job_details or self._build_job_details(file_to_run, python_files, args)
 
-        result = self.dataproc.client.projects().regions().jobs().submit(
-            projectId=self.dataproc.project,
-            region=self.dataproc.region,
-            body=job_details
-        ).execute()
+        try:
+            result = self.dataproc.client.projects().regions().jobs().submit(
+                projectId=self.dataproc.project,
+                region=self.dataproc.region,
+                body=job_details
+            ).execute()
 
-        return Job(self.dataproc, result['reference']['jobId'])
+            return Job(self.dataproc, result['reference']['jobId'])
+        except HttpError as e:
+            if e.resp['status'] == '404':
+                raise ClusterHasGoneAwayException("'{}' no longer exists".format(self.cluster_name))
+            raise e
 
     def _build_job_details(self, file_to_run, python_files=None, args=""):
         if python_files:
