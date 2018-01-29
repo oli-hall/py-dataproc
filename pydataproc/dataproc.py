@@ -24,19 +24,33 @@ class DataProc(object):
         return googleapiclient.discovery.build('dataproc', 'v1', cache_discovery=False)
 
     def clusters(self, cluster_name=None):
+        """
+        Allows the user to interact with a specific cluster or all
+        clusters (depending upon whether cluster_name is specified).
+
+        If cluster_name is specified, but there is no cluster with
+        that name, raises a NoSuchClusterException
+
+        :param cluster_name: string, name of cluster to fetch (optional)
+        :return: Cluster/Clusters
+        """
         if cluster_name:
-            cluster = Cluster(self, cluster_name)
-            if not cluster.exists():
-                raise Exception("Cluster '{}' does not exist".format(cluster_name))
-            return cluster
+            return Cluster(self, cluster_name)
 
         return Clusters(self)
 
     def jobs(self, job_id=None):
+        """
+        Allows the user to interact with a specific job or all
+        jobs (depending upon whether job_id is specified).
+
+        If job_id is specified, but there is no cluster with
+        that name, raises a NoSuchJobException
+
+        :param job_id: string, ID of job to fetch (optional)
+        :return: Job/Jobs
+        """
         if job_id:
-            job = Job(self, job_id)
-            if not job.exists():
-                raise Exception("Job '{}' does not exist".format(job_id))
-            return job
+            return Job(self, job_id)
 
         return Jobs(self)

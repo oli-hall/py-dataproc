@@ -2,6 +2,7 @@ from googleapiclient.errors import HttpError
 
 from job import Job
 from logger import log
+from errors import NoSuchClusterException
 
 
 class Cluster(object):
@@ -21,6 +22,9 @@ class Cluster(object):
 
         self.dataproc = dataproc
         self.cluster_name = cluster_name
+
+        if not self.exists():
+            raise NoSuchClusterException("Cluster '{}' does not exist".format(cluster_name))
 
     def exists(self):
         """

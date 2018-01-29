@@ -16,6 +16,9 @@ class Job(object):
         self.dataproc = dataproc
         self.job_id = job_id
 
+        if not self.exists():
+            raise NoSuchJobException("Job '{}' does not exist".format(job_id))
+
     def info(self):
         """
         Returns the full configuration information associated with a given

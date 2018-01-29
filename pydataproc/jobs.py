@@ -17,7 +17,7 @@ class Jobs(object):
         """
         Queries the DataProc API, returning a dict of jobs, keyed by job ID.
 
-        If 'minimal' is specified, each job's current state will be returned,
+        If 'minimal' is set to True, each job's current state will be returned,
         otherwise the full job configuration will be returned.
 
         If cluster_name is specified and not None, the list of jobs will be filtered
