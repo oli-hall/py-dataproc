@@ -1,8 +1,8 @@
 from googleapiclient.errors import HttpError
 
-from job import Job
-from logger import log
-from errors import NoSuchClusterException, ClusterHasGoneAwayException
+from pydataproc.job import Job
+from pydataproc.logger import log
+from pydataproc.errors import NoSuchClusterException, ClusterHasGoneAwayException
 
 
 class Cluster(object):

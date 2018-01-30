@@ -2,9 +2,9 @@ import time
 
 from googleapiclient.errors import HttpError
 
-from cluster import Cluster
-from logger import log
-from errors import ClusterAlreadyExistsException
+from pydataproc.cluster import Cluster
+from pydataproc.logger import log
+from pydataproc.errors import ClusterAlreadyExistsException
 
 class Clusters(object):
 

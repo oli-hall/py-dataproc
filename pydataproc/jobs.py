@@ -1,6 +1,6 @@
 from googleapiclient.errors import HttpError
 
-from logger import log
+from pydataproc.logger import log
 
 
 class Jobs(object):
