@@ -1,10 +1,10 @@
 import googleapiclient
 from googleapiclient import discovery
 
-from cluster import Cluster
-from clusters import Clusters
-from job import Job
-from jobs import Jobs
+from pydataproc.cluster import Cluster
+from pydataproc.clusters import Clusters
+from pydataproc.job import Job
+from pydataproc.jobs import Jobs
 
 
 class DataProc(object):

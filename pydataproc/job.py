@@ -2,8 +2,8 @@ import subprocess
 
 from googleapiclient.errors import HttpError
 
-from logger import log
-from errors import NoSuchJobException
+from pydataproc.logger import log
+from pydataproc.errors import NoSuchJobException
 
 
 class Job(object):
